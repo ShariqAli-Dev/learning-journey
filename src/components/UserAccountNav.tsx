@@ -1,6 +1,5 @@
 "use client";
 import { User } from "next-auth";
-import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +9,7 @@ import {
 } from "./ui/dropdown-menu";
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
+import UserAvatar from "./UserAvatar";
 
 interface Props {
   user: User;
@@ -19,7 +19,7 @@ export default function UserAccountNav({ user }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Button>open menu</Button>
+        <UserAvatar user={user} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <div className="flex items-center justify-start gap-2 p-2">
