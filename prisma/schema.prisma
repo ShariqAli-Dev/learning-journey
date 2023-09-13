@@ -67,24 +67,13 @@ model Unit {
 }
 
 model Chapter {
-  id                 String     @id @default(cuid())
+  id                 String  @id @default(cuid())
   unitId             String
+  name               String
   youtubeSearchQuery String
   videoId            String?
-  summary            String?    @db.VarChar(3000)
-  unit               Unit       @relation(fields: [unitId], references: [id])
-  questions          Question[]
+  summary            String? @db.VarChar(3000)
+  unit               Unit    @relation(fields: [unitId], references: [id])
 
   @@index([unitId], name: "unitId")
-}
-
-model Question {
-  id        String  @id @default(cuid())
-  chapterId String
-  question  String  @db.VarChar(3000)
-  answer    String  @db.VarChar(3000)
-  options   String  @db.VarChar(3000)
-  chapter   Chapter @relation(fields: [chapterId], references: [id])
-
-  @@index([chapterId], name: "chapterId")
 }
