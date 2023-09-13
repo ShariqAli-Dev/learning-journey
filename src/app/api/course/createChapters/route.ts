@@ -69,12 +69,11 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ courseId: course.id });
+    return NextResponse.json({ course_id: course.id });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json("invalid body", { status: 400 });
     }
-    console.log(error);
     return NextResponse.json({ error }, { status: 500 });
   }
 }

@@ -9,10 +9,25 @@ import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
 import { Plus, Trash } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { useToast } from "./ui/use-toast";
+import { useRouter } from "next/navigation";
 
 type Input = z.infer<typeof createChaptersSchema>;
 
 export default function CreateCourseForm() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { mutate: createChapters, isLoading } = useMutation({
+    mutationFn: async ({ title, units }: Input) => {
+      const response = await axios.post("/api/course/createChapters", {
+        title,
+        units,
+      });
+      return response.data;
+    },
+  });
   const form = useForm<Input>({
     resolver: zodResolver(createChaptersSchema),
     defaultValues: {
@@ -22,7 +37,31 @@ export default function CreateCourseForm() {
   });
 
   function onSubmit(data: Input) {
-    console.log(data);
+    if (data.units.some((unit) => unit === "")) {
+      return toast({
+        title: "Error",
+        description: "Please fill all the units",
+        variant: "destructive",
+      });
+    }
+
+    createChapters(data, {
+      onSuccess: ({ course_id }) => {
+        toast({
+          title: "Success",
+          description: "Course created successfully",
+        });
+        router.push(`/create/${course_id}`);
+      },
+      onError: (error) => {
+        console.log(error);
+        toast({
+          title: "Error",
+          description: "Something went wrong",
+          variant: "destructive",
+        });
+      },
+    });
   }
 
   form.watch();
@@ -117,7 +156,12 @@ export default function CreateCourseForm() {
             </div>
             <Separator className="flex-[1]" />
           </div>
-          <Button type="submit" className="w-full mt-6" size="lg">
+          <Button
+            disabled={isLoading}
+            type="submit"
+            className="w-full mt-6"
+            size="lg"
+          >
             Lets Go!
           </Button>
         </form>
