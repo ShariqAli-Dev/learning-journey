@@ -13,6 +13,7 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "./ui/use-toast";
 import { useRouter } from "next/navigation";
+import SubscriptionsAction from "./SubscriptionAction";
 
 type Input = z.infer<typeof createChaptersSchema>;
 
@@ -166,6 +167,7 @@ export default function CreateCourseForm() {
           </Button>
         </form>
       </Form>
+      <SubscriptionsAction />
     </div>
   );
 }
