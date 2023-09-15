@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { strict_output } from "@/lib/gpt";
-import { getTranscript, searchYoutube } from "@/lib/youtube";
+import {
+  getQuestionsFromTranscript,
+  getTranscript,
+  searchYoutube,
+} from "@/lib/youtube";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -39,13 +43,35 @@ export async function POST(req: NextRequest) {
     let maxLength = 500;
     transcript = transcript.split(" ").slice(0, maxLength).join(" ");
 
-    // stopped at 3 hours 10 mins
-
-    return NextResponse.json({
-      videoId,
+    const questions = await getQuestionsFromTranscript(
       transcript,
-      summary,
+      chapter.name
+    );
+
+    await prisma.question.createMany({
+      data: questions.map((questions) => {
+        let options = [questions.option1, questions.option2, questions.option3];
+        options.sort(() => Math.random() - 0.5);
+        return {
+          question: questions.question,
+          answer: questions.answer,
+          options: JSON.stringify(options),
+          chapterId: chapterId,
+        };
+      }),
     });
+
+    await prisma.chapter.update({
+      where: {
+        id: chapterId,
+      },
+      data: {
+        videoId,
+        summary,
+      },
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: "invalid body" }, { status: 400 });

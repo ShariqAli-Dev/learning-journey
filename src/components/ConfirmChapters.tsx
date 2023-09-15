@@ -5,7 +5,7 @@ import { Separator } from "./ui/separator";
 import Link from "next/link";
 import { Button, buttonVariants } from "./ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { RefObject, useRef } from "react";
+import { RefObject, useMemo, useRef, useState } from "react";
 
 interface Props {
   course: Course & {
@@ -21,6 +21,16 @@ export default function ConfirmChapters({ course }: Props) {
       chapterRefs[chapter.id] = useRef(null);
     });
   });
+  const [completedChapters, setCompletedChapters] = useState<Set<String>>(
+    new Set()
+  );
+  const totalChaptersCount = useMemo(() => {
+    return course.units.reduce((acc, unit) => {
+      return acc + unit.chapters.length;
+    }, 0);
+  }, [course.units]);
+  const [loading, setLoading] = useState(false);
+
   return (
     <div className="w-full mt-4 ">
       {course.units.map((unit, unitIndex) => {
@@ -34,6 +44,8 @@ export default function ConfirmChapters({ course }: Props) {
               {unit.chapters.map((chapter, chapterIndex) => {
                 return (
                   <ChapterCard
+                    completedChapters={completedChapters}
+                    setCompletedChapters={setCompletedChapters}
                     ref={chapterRefs[chapter.id]}
                     key={chapter.id}
                     chapter={chapter}
@@ -57,18 +69,32 @@ export default function ConfirmChapters({ course }: Props) {
             <ChevronLeft className="w-4 h-4 mr-2" strokeWidth={4} />
             Back
           </Link>
-          <Button
-            type="button"
-            className="ml-4 font-semibold"
-            onClick={() => {
-              Object.values(chapterRefs).forEach((ref) => {
-                ref.current?.triggerLoad();
-              });
-            }}
-          >
-            Generate
-            <ChevronRight className="w-4 h-4 ml-2" strokeWidth={4} />
-          </Button>
+          {totalChaptersCount === completedChapters.size ? (
+            <Link
+              className={buttonVariants({
+                className: "ml-4 font-semibold",
+              })}
+              href={`/course/${course.id}/0/0`}
+            >
+              Save & Continue
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Link>
+          ) : (
+            <Button
+              type="button"
+              className="ml-4 font-semibold"
+              disabled={loading}
+              onClick={() => {
+                setLoading(true);
+                Object.values(chapterRefs).forEach((ref) => {
+                  ref.current?.triggerLoad();
+                });
+              }}
+            >
+              Generate
+              <ChevronRight className="w-4 h-4 ml-2" strokeWidth={4} />
+            </Button>
+          )}
         </div>
         <Separator className="flex-[1]" />
       </div>
