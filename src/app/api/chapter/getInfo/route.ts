@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
         id: chapterId,
       },
     });
-
     if (!chapter) {
       return NextResponse.json(
         {
@@ -31,17 +30,17 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
-
     const videoId = await searchYoutube(chapter.youtubeSearchQuery);
     let transcript = await getTranscript(videoId);
+    let maxLength = 500;
+    transcript = transcript.split(" ").slice(0, maxLength).join(" ");
+
     const { summary }: { summary: string } = await strict_output(
-      "You are an ai capable of summarizing a youtube transcript",
-      "summarize in 250 words or less and do not talk of the sponsers or anything unrelated to the topic, also do not introduce what the summary is about\n" +
+      "You are an AI capable of summarising a youtube transcript",
+      "summarise in 250 words or less and do not talk of the sponsors or anything unrelated to the main topic, also do not introduce what the summary is about.\n" +
         transcript,
       { summary: "summary of the transcript" }
     );
-    let maxLength = 500;
-    transcript = transcript.split(" ").slice(0, maxLength).join(" ");
 
     const questions = await getQuestionsFromTranscript(
       transcript,
@@ -49,12 +48,17 @@ export async function POST(req: NextRequest) {
     );
 
     await prisma.question.createMany({
-      data: questions.map((questions) => {
-        let options = [questions.option1, questions.option2, questions.option3];
-        options.sort(() => Math.random() - 0.5);
+      data: questions.map((question) => {
+        let options = [
+          question.answer,
+          question.option1,
+          question.option2,
+          question.option3,
+        ];
+        options = options.sort(() => Math.random() - 0.5);
         return {
-          question: questions.question,
-          answer: questions.answer,
+          question: question.question,
+          answer: question.answer,
           options: JSON.stringify(options),
           chapterId: chapterId,
         };
@@ -62,19 +66,23 @@ export async function POST(req: NextRequest) {
     });
 
     await prisma.chapter.update({
-      where: {
-        id: chapterId,
-      },
+      where: { id: chapterId },
       data: {
-        videoId,
-        summary,
+        videoId: videoId,
+        summary: summary,
       },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: "invalid body" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid body",
+        },
+        { status: 400 }
+      );
     } else {
       return NextResponse.json(
         {
