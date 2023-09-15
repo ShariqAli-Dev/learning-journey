@@ -17,7 +17,11 @@ import SubscriptionsAction from "./SubscriptionAction";
 
 type Input = z.infer<typeof createChaptersSchema>;
 
-export default function CreateCourseForm() {
+interface Props {
+  isPro: boolean;
+}
+
+export default function CreateCourseForm({ isPro }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const { mutate: createChapters, isLoading } = useMutation({
@@ -167,7 +171,8 @@ export default function CreateCourseForm() {
           </Button>
         </form>
       </Form>
-      <SubscriptionsAction />
+
+      {!isPro && <SubscriptionsAction />}
     </div>
   );
 }

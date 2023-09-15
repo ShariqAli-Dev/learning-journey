@@ -4,6 +4,8 @@ import { ZodError } from "zod";
 import { strict_output } from "@/lib/gpt";
 import { getUnsplashImage } from "@/lib/unsplash";
 import { prisma } from "@/lib/db";
+import { getAuthSession } from "@/lib/auth";
+import { checkSubscription } from "@/lib/subscription";
 
 interface OutputUnit {
   title: string;
@@ -19,6 +21,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthSession();
+    if (!session?.user) {
+      return new NextResponse("unauthorized", { status: 401 });
+    }
+    const isPro = await checkSubscription();
+    if (session.user.credits <= 0 && !isPro) {
+      return new NextResponse("not enough credits", { status: 402 });
+    }
     const body = await req.json();
     const { title, units } = createChaptersSchema.parse(body);
 
@@ -68,7 +78,12 @@ export async function POST(req: Request) {
         }),
       });
     }
-
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        credits: session.user.credits - 1,
+      },
+    });
     return NextResponse.json({ course_id: course.id });
   } catch (error) {
     if (error instanceof ZodError) {

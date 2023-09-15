@@ -1,5 +1,6 @@
 import CreateCourseForm from "@/components/CreateCourseForm";
 import { getAuthSession } from "@/lib/auth";
+import { checkSubscription } from "@/lib/subscription";
 import { InfoIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 
@@ -8,6 +9,7 @@ export default async function CreatePage() {
   if (!session?.user) {
     return redirect("/gallery");
   }
+  const isPro = await checkSubscription();
 
   return (
     <div className="flex flex-col items-start max-w-xl px-8 mx-auto my-16 sm:px-0">
@@ -22,7 +24,7 @@ export default async function CreatePage() {
           will generate a course for you!
         </div>
       </div>
-      <CreateCourseForm />
+      <CreateCourseForm isPro={isPro} />
     </div>
   );
 }
